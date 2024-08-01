@@ -22,3 +22,6 @@ go.work
 
 # Remove directory containing build
 dist
+
+# Removes json file ledt over from testing
+lan.json

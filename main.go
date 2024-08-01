@@ -4,16 +4,19 @@ import (
 	"flag"
 
 	"github.com/theredwiking/lanscan/cmd"
+	"github.com/theredwiking/lanscan/models"
 )
 
 func main() {
+	scanConf := models.Scan{}
+
 	var scan = flag.Bool("scan", false, "Starts scan of lan")
-	var _ = flag.String("file", "lan.json", "Name of file output")
-	var display = flag.Bool("v", false, "Shows output")
+	flag.StringVar(&scanConf.File, "file", "./lan.json", "Name of file output")
+	flag.BoolVar(&scanConf.Display, "all", false, "Shows all scanned devices")
 
 	flag.Parse()
 
 	if *scan {
-		cmd.Scan(*display)
+		cmd.Scan(scanConf)
 	}
 }

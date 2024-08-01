@@ -9,11 +9,18 @@ import (
 	"github.com/theredwiking/lanscan/models"
 )
 
-func Scan(display bool) {
+func Scan(config models.Scan) {
 	fmt.Println("Starting scan")
+
+	if err := core.CreateFile(config.File); err != nil {
+		log.Println(err)
+		return
+	}
 
 	ips := make(chan string, 254)
 	devices := make(chan models.Device, 254)
+
+	scanResult := []models.Device{}
 	
 	lan, err := core.LanIP()
 	if err != nil {
@@ -31,7 +38,7 @@ func Scan(display bool) {
 		go core.Ping(ips, devices)
 	}
 
-	if display {
+	if config.Display {
 		go core.OutputDisplay(devices)
 	}
 
@@ -39,6 +46,8 @@ func Scan(display bool) {
 
 	for {
 		select {
+		case device := <- devices:
+			scanResult = append(scanResult, device)
 		case _ = <- ticker.C:
 			if len(ipRange) != 0 {
 				ips <- ipRange[0]
@@ -50,9 +59,16 @@ func Scan(display bool) {
 			}
 
 			if len(ipRange) == 0 && len(devices) == 0 && len(ips) == 0 {
-				fmt.Println("Scan complete")
+				fmt.Println("Scan complete")	
+				if err = core.WriteFile(config.File, scanResult); err != nil {
+					log.Println(err)
+					return
+				}
+				fmt.Printf("Wrote data to file: %s", config.File)
 				return
 			}
 		}
 	}
+
+
 }
