@@ -7,31 +7,51 @@ import (
 	"github.com/go-ping/ping"
 )
 
-func Ping(ip string, message chan bool) {
-	pinger, err := ping.NewPinger(ip)
-	if err != nil {
-		log.Println(err)
-		message <- false
-		return
+// Ping Struct
+type Pinger struct {
+	Reciever chan IP
+}
+
+// Generates new pinger
+func NewPinger() *Pinger {
+	return &Pinger{
+		Reciever: make(chan IP),
 	}
-	
-	pinger.SetPrivileged(true)
-	pinger.Count = 2
-	pinger.Timeout = 5 * time.Second
+}
 
-	err = pinger.Run()
-	if err != nil {
-		pinger.Stop()
-		log.Println(err)
-		message <- false
-		return
-	}
+// Pings ip provide and returns result through channel
+// So it can run as an goroutine
+func (p *Pinger) Ping(ips chan IP) {
+	for {
+		select {
+		case ip := <- p.Reciever:
+			pinger, err := ping.NewPinger(ip.Ip)
+			if err != nil {
+				log.Println(err)
+				ips <- ip
+				return
+			}
+			
+			pinger.SetPrivileged(true)
+			pinger.Count = 2
+			pinger.Timeout = 5 * time.Second
 
-	stats := pinger.Statistics()
+			err = pinger.Run()
+			if err != nil {
+				pinger.Stop()
+				log.Println(err)
+				ips <- ip
+				return
+			}
 
-	if stats.PacketLoss == 0 {
-		message <- true
-	} else {
-		message <- false
+			stats := pinger.Statistics()
+
+			if stats.PacketLoss == 0 {
+				ip.Active = true
+				ips <- ip
+			} else {
+				ips <- ip
+			}
+		}
 	}
 }

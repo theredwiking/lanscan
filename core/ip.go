@@ -7,15 +7,17 @@ import (
 	"strings"
 )
 
-type Lan struct {
+type IP struct {
 	Ip string `json:"ip"`
 	CIDR int `json:"cidr"`
+	Active bool `json:"active"`
 }
 
-func LanIP() (Lan, error){
+// Finds lan information and returns Lan struct
+func LanIP() (IP, error){
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return Lan{"", 0}, errors.New("failed to get interfaces")
+		return IP{"", 0, false}, errors.New("failed to get interfaces")
 	}
 
 	for _, iface := range ifaces {
@@ -28,7 +30,7 @@ func LanIP() (Lan, error){
 
 		addrs, err := iface.Addrs()
 		if err != nil {
-			return Lan{"", 0}, errors.New("failed to load iface addresses")
+			return IP{"", 0, false}, errors.New("failed to load iface addresses")
 		}
 		for _, addr := range addrs {
 			var ip net.IP
@@ -46,14 +48,15 @@ func LanIP() (Lan, error){
 				continue
 			}
 			cidr := getCIDR(addr.String()); if cidr == 0 {
-				return Lan{"", 0}, errors.New("could not get cidr from iface")
+				return IP{"", 0, false}, errors.New("could not get cidr from iface")
 			}
-			return Lan{ip.String(), cidr}, nil
+			return IP{ip.String(), cidr, true}, nil
 		}
 	}
-	return Lan{"", 0}, errors.New("no clue");
+	return IP{"", 0, false}, errors.New("no clue");
 }
 
+// Takes in addr.String() and return CIDR
 func getCIDR(cidr string) int {
 	cidrArr := strings.Split(cidr, "/")
 	newCidr, err := strconv.Atoi(cidrArr[1])

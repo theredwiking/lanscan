@@ -12,15 +12,21 @@ func main() {
 		log.Printf("No ip address found: %v", err)
 		return
 	}
-	message := make(chan bool)
+	messages := make(chan core.IP, 3)
+	
+	pinger := core.NewPinger()
+	
+	go pinger.Ping(messages)
 
-	go core.Ping("192.168.0.1", message)
+	pinger.Reciever <- core.IP{Ip: "192.168.0.1", CIDR: 24, Active: false}
+
+	//go core.Ping(messages)
 
 	for {
 		select {
-		case msg := <-message:
+		case msg := <-messages:
 			log.Println(msg)
-			return
+			pinger.Reciever <- core.IP{Ip: "192.168.0.7", CIDR: 24, Active: false}
 		}
 	}
 }
