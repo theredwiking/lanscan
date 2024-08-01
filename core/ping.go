@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-ping/ping"
+	"github.com/theredwiking/lanscan/models"
 )
 
 // Pings device from string, uses 2 channels
@@ -13,6 +14,7 @@ func Ping(in chan string, out chan bool) {
 	for {
 		select {
 		case ip := <- in:
+			device := models.Device{ip, false, []}
 			pinger, err := ping.NewPinger(ip)
 			if err != nil {
 				log.Println(err)
