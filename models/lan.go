@@ -1,6 +1,6 @@
 package models
 
-type IP struct {
+type LAN struct {
 	Ip string `json:"ip"`
 	CIDR int `json:"cidr"`
 }
