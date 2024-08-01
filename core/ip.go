@@ -5,19 +5,15 @@ import (
 	"net"
 	"strconv"
 	"strings"
+
+	"github.com/theredwiking/lanscan/models"
 )
 
-type IP struct {
-	Ip string `json:"ip"`
-	CIDR int `json:"cidr"`
-	Active bool `json:"active"`
-}
-
 // Finds lan information and returns Lan struct
-func LanIP() (IP, error){
+func LanIP() (models.IP, error){
 	ifaces, err := net.Interfaces()
 	if err != nil {
-		return IP{"", 0, false}, errors.New("failed to get interfaces")
+		return models.IP{Ip: "", CIDR: 0}, errors.New("failed to get interfaces")
 	}
 
 	for _, iface := range ifaces {
@@ -30,7 +26,7 @@ func LanIP() (IP, error){
 
 		addrs, err := iface.Addrs()
 		if err != nil {
-			return IP{"", 0, false}, errors.New("failed to load iface addresses")
+			return models.IP{Ip: "", CIDR: 0}, errors.New("failed to load iface addresses")
 		}
 		for _, addr := range addrs {
 			var ip net.IP
@@ -48,12 +44,12 @@ func LanIP() (IP, error){
 				continue
 			}
 			cidr := getCIDR(addr.String()); if cidr == 0 {
-				return IP{"", 0, false}, errors.New("could not get cidr from iface")
+				return models.IP{Ip: "", CIDR: 0}, errors.New("could not get cidr from iface")
 			}
-			return IP{ip.String(), cidr, true}, nil
+			return models.IP{Ip: ip.String(), CIDR: cidr}, nil
 		}
 	}
-	return IP{"", 0, false}, errors.New("no clue");
+	return models.IP{Ip: "", CIDR: 0}, errors.New("no clue");
 }
 
 // Takes in addr.String() and return CIDR

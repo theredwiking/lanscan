@@ -7,26 +7,26 @@ import (
 )
 
 func main() {
-	_, err := core.LanIP()
-	if err != nil {
-		log.Printf("No ip address found: %v", err)
-		return
-	}
-	messages := make(chan core.IP, 3)
+	ips := make(chan string)
+	alive := make(chan bool, 254)
 	
-	pinger := core.NewPinger()
+	ipRange := []string{"192.168.0.1", "192.168.0.7", "192.168.0.8", "192.168.0.9", "192.168.0.10"}
 	
-	go pinger.Ping(messages)
+	go core.Ping(ips, alive)
+	go core.Ping(ips, alive)
+	go core.Ping(ips, alive)
 
-	pinger.Reciever <- core.IP{Ip: "192.168.0.1", CIDR: 24, Active: false}
-
-	//go core.Ping(messages)
+	ips <- ipRange[0]
+	ipRange = append(ipRange[:0], ipRange[1:]...)
 
 	for {
 		select {
-		case msg := <-messages:
+		case msg := <-alive:
 			log.Println(msg)
-			pinger.Reciever <- core.IP{Ip: "192.168.0.7", CIDR: 24, Active: false}
+			ips <- ipRange[0]
+			if len(ipRange) > 1 {
+				ipRange = append(ipRange[:0], ipRange[1:]...)
+			}
 		}
 	}
 }

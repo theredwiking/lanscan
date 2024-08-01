@@ -7,28 +7,16 @@ import (
 	"github.com/go-ping/ping"
 )
 
-// Ping Struct
-type Pinger struct {
-	Reciever chan IP
-}
-
-// Generates new pinger
-func NewPinger() *Pinger {
-	return &Pinger{
-		Reciever: make(chan IP),
-	}
-}
-
-// Pings ip provide and returns result through channel
-// So it can run as an goroutine
-func (p *Pinger) Ping(ips chan IP) {
+// Pings device from string, uses 2 channels
+// so as many can be started and used with only 2 channels
+func Ping(in chan string, out chan bool) {
 	for {
 		select {
-		case ip := <- p.Reciever:
-			pinger, err := ping.NewPinger(ip.Ip)
+		case ip := <- in:
+			pinger, err := ping.NewPinger(ip)
 			if err != nil {
 				log.Println(err)
-				ips <- ip
+				out <- false
 				return
 			}
 			
@@ -40,17 +28,16 @@ func (p *Pinger) Ping(ips chan IP) {
 			if err != nil {
 				pinger.Stop()
 				log.Println(err)
-				ips <- ip
+				out <- false
 				return
 			}
 
 			stats := pinger.Statistics()
 
 			if stats.PacketLoss == 0 {
-				ip.Active = true
-				ips <- ip
+				out <- true
 			} else {
-				ips <- ip
+				out <- false
 			}
 		}
 	}
